@@ -684,7 +684,7 @@ async function loadQuestionAt(index) {
   renderQuiz();
 }
 
-function stepAmountFor() { return Math.floor(Math.random() * 2) + 1; }
+function stepAmountFor() { return Math.floor(Math.random() * 3) + 3; }
 
 // ---------------------------------------------------------------------------
 // Coordinate plane SVG renderer — draws exactly the lines/curves/points the
@@ -786,14 +786,14 @@ function renderGraphSvg(graph) {
   return svg;
 }
 function gradeTextAnswer(userVal, correctVal) {
-  if (isNaN(userVal)) return { isCorrect: false, step: 2 };
+  if (isNaN(userVal)) return { isCorrect: false, step: 5 };
   const diff = Math.abs(userVal - correctVal);
   const scale = Math.max(Math.abs(correctVal), 1);
   const relError = diff / scale;
   const isCorrect = relError <= 0.02;
   let step;
-  if (isCorrect) step = relError === 0 ? 2 : 1;
-  else { const closeness = Math.max(0, 1 - Math.min(1, relError)); step = closeness > 0.5 ? 1 : 2; }
+  if (isCorrect) step = relError === 0 ? 5 : 3;
+  else { const closeness = Math.max(0, 1 - Math.min(1, relError)); step = closeness > 0.5 ? 3 : 5; }
   return { isCorrect, step };
 }
 
