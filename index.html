@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyAI</title>
+</head>
+<body>
+<div style="max-width:820px;margin:0 auto;font-family:'Segoe UI',system-ui,sans-serif;">
+  <style>
+    .app * { box-sizing: border-box; }
+    .app { color:#1a1a2e; }
+    .tab-bar { display:flex; gap:6px; margin-bottom:20px; border-bottom:2px solid #eee; }
+    .tab-btn { padding:10px 18px; border:none; background:none; font-size:14px; font-weight:600; color:#888; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; }
+    .tab-btn.active { color:#bf5700; border-bottom-color:#bf5700; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .card { border:1px solid #e2e2e2; border-radius:12px; padding:20px; margin-bottom:16px; background:#fafafa; }
+    .method-toggle { display:flex; gap:8px; margin-bottom:16px; }
+    .method-btn { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; font-weight:600; color:#555; }
+    .method-btn.active { border-color:#bf5700; background:#fff4e0; color:#bf5700; }
+    label.field-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#888; margin:14px 0 6px; }
+    input[type=text], textarea, select { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; font-family:inherit; }
+    textarea { min-height:100px; resize:vertical; }
+    .file-drop { border:2px dashed #ccc; border-radius:10px; padding:24px; text-align:center; cursor:pointer; color:#888; font-size:13px; }
+    .file-drop:hover { border-color:#bf5700; color:#bf5700; }
+    .file-drop.has-file { border-color:#34a853; color:#1e7e34; background:#e6f4ea; }
+    .file-drop.drag-over { border-color:#bf5700; background:#fff4e0; color:#bf5700; }
+    .primary-btn { padding:12px 22px; border:none; border-radius:8px; background:#bf5700; color:#fff; font-size:14px; font-weight:600; cursor:pointer; margin-top:16px; }
+    .primary-btn:disabled { opacity:.4; cursor:default; }
+    .secondary-btn { padding:10px 18px; border:1px solid #999; border-radius:8px; background:#fff; color:#555; font-size:13px; cursor:pointer; }
+    .status-line { font-size:13px; color:#888; margin-top:8px; }
+    .status-line.error:not(:empty) { color:#c62828; background:#fdecea; border:1px solid #e53935; border-radius:8px; padding:10px 14px; font-weight:600; }
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid #ddd; border-top-color:#bf5700; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .topic-chip { display:inline-block; padding:5px 12px; margin:4px 4px 0 0; background:#f0e4d7; color:#8a4a12; border-radius:12px; font-size:12px; font-weight:600; }
+    .test-item { display:flex; justify-content:space-between; align-items:center; border:1px solid #e2e2e2; border-radius:10px; padding:14px 16px; margin-bottom:10px; background:#fff; }
+    .test-item h4 { margin:0 0 4px; font-size:15px; }
+    .test-item p { margin:0; font-size:12px; color:#888; }
+    .test-item .actions { display:flex; gap:8px; }
+    .empty-state { text-align:center; color:#999; padding:40px 20px; font-size:14px; }
+    /* quiz styles */
+    .quiz-header { text-align:center; margin-bottom:20px; }
+    .quiz-header h1 { font-size:20px; margin:0 0 4px; color:#bf5700; }
+    .quiz-header p { font-size:13px; color:#666; margin:0; }
+    .progress-bar { height:6px; background:#eee; border-radius:3px; overflow:hidden; margin:14px 0 20px; }
+    .progress-fill { height:100%; background:#bf5700; width:0%; transition:width .3s; }
+    .q-card { border:1px solid #e2e2e2; border-radius:12px; padding:20px; margin-bottom:16px; background:#fafafa; }
+    .q-top-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .q-topic { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#bf5700; font-weight:600; }
+    .diff-badge { font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; text-transform:uppercase; letter-spacing:.5px; color:#fff; }
+    .q-text { font-size:15px; line-height:1.5; margin-bottom:14px; white-space:pre-wrap; }
+    .choice { display:block; width:100%; text-align:left; padding:10px 14px; margin-bottom:8px; border:1px solid #ccc; border-radius:8px; background:#fff; cursor:pointer; font-size:14px; }
+    .choice:hover { border-color:#bf5700; }
+    .choice.correct { background:#e6f4ea; border-color:#34a853; }
+    .choice.incorrect { background:#fdecea; border-color:#e53935; }
+    .choice:disabled { cursor:default; }
+    .text-input-row { display:flex; align-items:center; gap:8px; }
+    .text-input-inline { width:130px; padding:10px 14px; border:1px solid #ccc; border-radius:8px; font-size:14px; text-align:center; }
+    .unit-label { font-size:14px; color:#555; font-weight:600; }
+    .text-answer-result { padding:10px 14px; border-radius:8px; font-size:14px; font-weight:600; }
+    .text-answer-result.correct { background:#e6f4ea; border:1px solid #34a853; color:#1e7e34; }
+    .text-answer-result.incorrect { background:#fdecea; border:1px solid #e53935; color:#c62828; }
+    .explain { margin-top:10px; font-size:13px; padding:10px; border-radius:8px; background:#fff8ec; border:1px solid #f0d9b5; display:none; }
+    .explain.show { display:block; }
+    .shift-note { margin-top:8px; font-size:12px; font-weight:600; display:none; }
+    .shift-note.show { display:block; }
+    .shift-up { color:#c62828; }
+    .shift-down { color:#1e7e34; }
+    .nav-row { display:flex; justify-content:space-between; margin-top:20px; }
+    .nav-btn { padding:8px 16px; border-radius:8px; border:1px solid #bf5700; background:#fff; color:#bf5700; cursor:pointer; font-size:14px; }
+    .nav-btn:disabled { opacity:.35; cursor:default; }
+    .nav-btn.primary { background:#bf5700; color:#fff; }
+    .dot-row { display:flex; gap:5px; justify-content:center; margin-bottom:6px; flex-wrap:wrap; }
+    .dot { width:9px; height:9px; border-radius:50%; background:#ddd; }
+    .dot.correct { background:#34a853; }
+    .dot.incorrect { background:#e53935; }
+    .dot.current { outline:2px solid #bf5700; outline-offset:2px; }
+    .result-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:13px; }
+    .result-table th, .result-table td { border:1px solid #ddd; padding:8px 10px; text-align:left; }
+    .result-table th { background:#f0e4d7; color:#bf5700; }
+    .result-table td.mark-correct { color:#1e7e34; font-weight:700; text-align:center; }
+    .result-table td.mark-incorrect { color:#c62828; font-weight:700; text-align:center; }
+    .loading-block { text-align:center; padding:40px 20px; color:#888; font-size:14px; }
+    .auth-card { max-width:360px; margin:40px auto; border:1px solid #e2e2e2; border-radius:12px; padding:28px; background:#fafafa; }
+    .auth-card h2 { margin-top:0; text-align:center; color:#bf5700; font-size:20px; }
+    .auth-toggle { display:flex; gap:8px; margin-bottom:18px; }
+    .auth-toggle button { flex:1; padding:8px; border:1px solid #ccc; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; font-weight:600; color:#555; }
+    .auth-toggle button.active { border-color:#bf5700; background:#fff4e0; color:#bf5700; }
+    .app-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .app-title { font-size:22px; color:#1a1a2e; margin:0; letter-spacing:-0.5px; }
+    .user-bar { display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-bottom:8px; font-size:13px; color:#666; }
+    .user-bar button { padding:6px 12px; border:1px solid #999; border-radius:8px; background:#fff; color:#555; font-size:12px; cursor:pointer; }
+  </style>
+
+  <div class="app">
+    <div class="app-header" id="appHeader" style="display:none;">
+      <h1 class="app-title">StudyAI</h1>
+      <div id="userBar"></div>
+    </div>
+    <div class="tab-bar" id="tabBar" style="display:none;">
+      <button class="tab-btn active" id="tabBtnCreate" onclick="switchTab('create')">Create Test</button>
+      <button class="tab-btn" id="tabBtnPrevious" onclick="switchTab('previous')">Previous Tests</button>
+    </div>
+
+    <div class="panel" id="panelAuth"></div>
+    <div class="panel" id="panelCreate"></div>
+    <div class="panel" id="panelPrevious"></div>
+    <div class="panel" id="panelQuiz"></div>
+    <div class="panel" id="panelAdmin"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// pdf.js setup
+// ---------------------------------------------------------------------------
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+// This sandboxed environment sometimes blocks creating a real background Worker
+// (cross-origin/CSP restriction), so pdf.js falls back to a "fake worker" that
+// runs on the main thread instead. That fallback works fine — it's just noisy —
+// so we quiet that one specific, harmless warning without hiding anything else.
+(function silenceFakeWorkerWarning() {
+  const originalWarn = console.warn;
+  console.warn = function (...args) {
+    if (typeof args[0] === 'string' && args[0].toLowerCase().includes('fake worker')) return;
+    originalWarn.apply(console, args);
+  };
+})();
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let currentTab = 'create';
+let createMethod = 'pdf'; // 'pdf' | 'describe'
+let extractedPdfText = '';
+let pdfFileName = '';
+let generatingTest = false;
+let lastGeneratedTest = null; // { id, name, gradeLevel, source, context, topics }
+
+// quiz session state
+let activeTest = null;
+let sessionPercent = [];
+let sessionRound = 1;
+let sessionTopicSequence = []; // maps question index -> topic index for this round
+let sessionQuestions = []; // filled progressively (may contain null while loading)
+let sessionAnswers = [];
+let sessionAppliedStep = [];
+let sessionReported = [];
+let sessionReportOpen = [];
+let sessionCurrent = 0;
+let sessionLoading = false;
+let sessionLoadError = null;
+
+function questionsPerTopicFor(topicCount) {
+  if (topicCount >= 6) return 1;
+  if (topicCount >= 4) return 2;  // 4-5 topics
+  if (topicCount === 3) return 3;
+  if (topicCount === 2) return 5;
+  if (topicCount === 1) return 10;
+  return 1;
+}
+
+function buildTopicSequence(topicCount) {
+  const perTopic = questionsPerTopicFor(topicCount);
+  const seq = [];
+  for (let rep = 0; rep < perTopic; rep++) {
+    for (let t = 0; t < topicCount; t++) seq.push(t);
+  }
+  return seq;
+}
+
+// ---------------------------------------------------------------------------
+// Auth state & helpers
+// ---------------------------------------------------------------------------
+let currentUser = null; // username string, or null if logged out
+let authMode = 'login'; // 'login' | 'register'
+
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function randomSalt() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function getUserRecord(username) {
+  try { const r = await window.storage.get(`user:${username}`, true); return r ? JSON.parse(r.value) : null; }
+  catch (e) { return null; }
+}
+async function setUserRecord(username, record) {
+  try {
+    await window.storage.set(`user:${username}`, JSON.stringify(record), true);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function handleRegister(username, password) {
+  username = (username || '').toLowerCase();
+  if (!username || !password) return 'Please fill in both fields.';
+  if (!/^[a-z0-9_-]{2,20}$/.test(username)) return 'Username must be 2-20 characters: letters, numbers, _ or - only.';
+  if (password.length < 4) return 'Password must be at least 4 characters.';
+  const existing = await getUserRecord(username);
+  if (existing) return 'That username is already taken.';
+  const salt = randomSalt();
+  const hash = await sha256Hex(salt + password);
+  const saved = await setUserRecord(username, { salt, hash, createdAt: Date.now() });
+  if (!saved) return "Couldn't save your account — storage may be unavailable right now. Please try again.";
+  currentUser = username;
+  return null;
+}
+
+async function handleLogin(username, password) {
+  username = (username || '').toLowerCase();
+  if (!username || !password) return 'Please fill in both fields.';
+  const record = await getUserRecord(username);
+  if (!record) return 'No account found with that username.';
+  const hash = await sha256Hex(record.salt + password);
+  if (hash !== record.hash) return 'Incorrect password.';
+  currentUser = username;
+  return null;
+}
+
+function handleLogout() {
+  currentUser = null;
+  authMode = 'login';
+  renderAuthGate();
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic admin list — stored in shared storage so admin status can be
+// granted from within the app itself, without editing code or republishing
+// ---------------------------------------------------------------------------
+async function loadDynamicAdmins() {
+  try {
+    const r = await window.storage.get('admin_list', true);
+    return r ? JSON.parse(r.value) : [];
+  } catch (e) { return []; }
+}
+async function saveDynamicAdmins(list) {
+  try { await window.storage.set('admin_list', JSON.stringify(list), true); return true; }
+  catch (e) { return false; }
+}
+async function isCurrentUserAdmin() {
+  if (!currentUser) return false;
+  if (ADMIN_USERNAMES.includes(currentUser)) return true;
+  const dynamicAdmins = await loadDynamicAdmins();
+  return dynamicAdmins.includes(currentUser);
+}
+
+// ---------------------------------------------------------------------------
+// Storage helpers (shared storage, scoped by username — this is what makes
+// accounts and their tests/progress work the same across any device, since
+// isolation comes from our own login system rather than per-session storage)
+// ---------------------------------------------------------------------------
+async function storageSafeGet(key) {
+  try { const r = await window.storage.get(key, true); return r ? r.value : null; }
+  catch (e) { return null; }
+}
+async function storageSafeSet(key, value) {
+  try { await window.storage.set(key, value, true); return true; }
+  catch (e) { return false; }
+}
+async function storageSafeDelete(key) {
+  try { await window.storage.delete(key, true); return true; }
+  catch (e) { return false; }
+}
+async function listTestIds() {
+  try {
+    const r = await window.storage.list(`test:${currentUser}:`, true);
+    return r ? r.keys : [];
+  } catch (e) { return []; }
+}
+
+async function saveTest(test) {
+  await storageSafeSet(`test:${currentUser}:${test.id}`, JSON.stringify(test));
+}
+async function loadTest(id) {
+  const raw = await storageSafeGet(`test:${currentUser}:${id}`);
+  return raw ? JSON.parse(raw) : null;
+}
+async function deleteTest(id) {
+  await storageSafeDelete(`test:${currentUser}:${id}`);
+  await storageSafeDelete(`progress:${currentUser}:${id}`);
+}
+async function saveProgress(id, progress) {
+  await storageSafeSet(`progress:${currentUser}:${id}`, JSON.stringify(progress));
+}
+async function loadProgress(id) {
+  const raw = await storageSafeGet(`progress:${currentUser}:${id}`);
+  return raw ? JSON.parse(raw) : null;
+}
+
+// ---------------------------------------------------------------------------
+// AI calls (Anthropic API — the only LLM available inside this artifact)
+// ---------------------------------------------------------------------------
+async function callAI(systemPrompt, userPrompt, maxTokens) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: maxTokens || 1000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }]
+    })
+  });
+  const data = await response.json();
+  const text = (data.content || []).map(b => b.text || "").join("\n");
+  return text;
+}
+
+function extractJson(text) {
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
+  const firstBrace = Math.min(
+    ...['{', '['].map(ch => { const i = cleaned.indexOf(ch); return i === -1 ? Infinity : i; })
+  );
+  if (firstBrace !== Infinity && firstBrace > 0) cleaned = cleaned.slice(firstBrace);
+  return JSON.parse(cleaned);
+}
+
+async function aiGenerateTopics(gradeLevel, sourceText) {
+  const system = "You are an expert curriculum designer. Respond ONLY with valid JSON — no markdown, no code fences, no commentary.";
+  const user = `Based on the following material for a ${gradeLevel} level test, generate a JSON array of 6 to 10 short topic names (3-8 words each) that should be covered in a practice test. Respond with ONLY a JSON array of strings, like ["Topic A", "Topic B"].\n\nMaterial:\n${sourceText.slice(0, 6000)}`;
+  const raw = await callAI(system, user, 500);
+  const parsed = extractJson(raw);
+  if (!Array.isArray(parsed)) throw new Error("Expected an array of topics");
+  return parsed.filter(t => typeof t === 'string').slice(0, 10);
+}
+
+async function aiGenerateQuestion(topic, percent, gradeLevel, context) {
+  const system = "You are an expert test-question writer who is extremely careful with arithmetic and logic. Respond ONLY with valid JSON matching the exact schema requested — no markdown, no code fences, no commentary.";
+  const user = `Write ONE practice question for a ${gradeLevel} level test on the topic "${topic}".
+Background material (may be partial, use if relevant): ${(context || '').slice(0, 3000)}
+
+Difficulty target: ${percent}% (0 = easiest, 100 = hardest). Scale the question's complexity to this difficulty.
+
+IMPORTANT — work carefully before answering:
+1. First, solve the question yourself step by step in a "work" field (your full reasoning, calculations, and final answer).
+2. Then double-check your own work by re-solving it a second, independent way in a "double_check" field, and confirm both methods agree before finalizing.
+3. Only after both methods agree, fill in the final fields below using that confirmed answer.
+
+If the correct answer is a single number, use type "text" with a numeric "numericAnswer" and a short "unit" (or empty string if none).
+Otherwise use type "mc" with a "choices" array of exactly 4 plausible strings (only one correct) and a 0-based "correct" index.
+
+VISUALS — if this question involves a coordinate plane, a graphed line, a slope, a parabola, plotted points, or anything else that's naturally shown as a picture, include an optional "graph" field so it can be drawn precisely (do NOT try to describe the picture in the question text itself — just include the graph field and reference it naturally, e.g. "Using the graph shown, ..."):
+{
+  "xMin": -10, "xMax": 10, "yMin": -10, "yMax": 10,
+  "lines": [ {"slope": 2, "intercept": -3, "label": "y = 2x - 3", "color": "#bf5700"} ],
+  "curves": [ {"a": 1, "b": 0, "c": -4, "label": "y = x² - 4", "color": "#1e7e34"} ],
+  "points": [ {"x": 2, "y": 1, "label": "A" } ]
+}
+Only include the sub-fields you actually need (lines/curves/points are all optional arrays). Omit the entire "graph" field if the question doesn't need a picture — most questions won't. If any point is meant to lie exactly on a line or curve you're also plotting, verify algebraically (plug the point's x into the line/curve equation and confirm you get that same y) before finalizing — a point that's supposed to be on the line but isn't will look obviously wrong once drawn.
+
+Respond with ONLY JSON in exactly this shape (the work/double_check fields can be brief, graph is optional):
+{"work": "step-by-step solution", "double_check": "independent re-solve confirming the same answer", "text": "question text", "type": "mc", "choices": ["a","b","c","d"], "correct": 0, "explain": "short explanation of why the correct choice is right", "graph": null}
+OR
+{"work": "step-by-step solution", "double_check": "independent re-solve confirming the same answer", "text": "question text", "type": "text", "numericAnswer": 42, "unit": "", "explain": "short explanation", "graph": null}`;
+  const raw = await callAI(system, user, 1400);
+  const parsed = extractJson(raw);
+  if (!parsed.text || !parsed.type) throw new Error("Malformed question JSON");
+  return parsed;
+}
+
+async function aiVerifyQuestion(question) {
+  const system = "You are a meticulous, skeptical math and fact checker whose job is to catch mistakes other people missed. Respond ONLY with valid JSON — no markdown, no commentary.";
+  const user = `Independently solve this question completely from scratch, as if you had never seen the marked answer. If a "graph" field is present, use those exact numeric values (they define what's actually shown to the student). Show your own full solution in a "my_solution" field. Only after that, compare your answer to the marked "correct"/"numericAnswer" field.
+
+If your independent solution matches the marked answer, respond: {"ok": true, "my_solution": "..."}
+If it does NOT match, respond: {"ok": false, "my_solution": "...", "fixed": <a corrected version of the question object in the exact same JSON shape, preserving or fixing the "graph" field as needed>}
+
+Question to check:
+${JSON.stringify({ text: question.text, type: question.type, choices: question.choices, correct: question.correct, numericAnswer: question.numericAnswer, unit: question.unit, graph: question.graph || null })}`;
+  try {
+    const raw = await callAI(system, user, 1200);
+    const parsed = extractJson(raw);
+    if (parsed.ok === false && parsed.fixed) return { ok: false, question: parsed.fixed };
+    return { ok: true, question };
+  } catch (e) {
+    return { ok: true, question }; // if verification itself fails to run, fall back to the original rather than blocking
+  }
+}
+
+async function generateVerifiedQuestion(topic, percent, gradeLevel, context) {
+  const maxAttempts = 3;
+  let bestFallback = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const q = await aiGenerateQuestion(topic, percent, gradeLevel, context);
+    const result = await aiVerifyQuestion(q);
+    if (result.ok) return result.question;
+    bestFallback = result.question; // a patched version, kept only as a last resort
+  }
+  // All fresh attempts failed verification — use the last patched fallback rather than nothing
+  return bestFallback;
+}
+
+// ---------------------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------------------
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabBtnCreate').classList.toggle('active', tab === 'create');
+  document.getElementById('tabBtnPrevious').classList.toggle('active', tab === 'previous');
+  document.getElementById('panelCreate').classList.toggle('active', tab === 'create');
+  document.getElementById('panelPrevious').classList.toggle('active', tab === 'previous');
+  document.getElementById('panelQuiz').classList.remove('active');
+  if (tab === 'create') renderCreatePanel();
+  if (tab === 'previous') renderPreviousPanel();
+}
+
+// ---------------------------------------------------------------------------
+// Create Test panel
+// ---------------------------------------------------------------------------
+function setCreateMethod(method) {
+  createMethod = method;
+  renderCreatePanel();
+}
+
+function renderCreatePanel() {
+  const root = document.getElementById('panelCreate');
+  root.innerHTML = `
+    <div class="card">
+      <div class="method-toggle">
+        <button class="method-btn ${createMethod === 'pdf' ? 'active' : ''}" onclick="setCreateMethod('pdf')">Upload a Study Guide (PDF)</button>
+        <button class="method-btn ${createMethod === 'describe' ? 'active' : ''}" onclick="setCreateMethod('describe')">Describe My Test</button>
+      </div>
+
+      <label class="field-label">Test Name</label>
+      <input type="text" id="testNameInput" placeholder="e.g. Algebra 1B Midterm" value="${lastGeneratedTest && lastGeneratedTest.name ? lastGeneratedTest.name : ''}" />
+
+      <label class="field-label">Grade Level</label>
+      <select id="gradeLevelSelect">
+        <option value="Kindergarten">Kindergarten</option>
+        <option value="1st Grade">1st Grade</option>
+        <option value="2nd Grade">2nd Grade</option>
+        <option value="3rd Grade">3rd Grade</option>
+        <option value="4th Grade">4th Grade</option>
+        <option value="5th Grade">5th Grade</option>
+        <option value="6th Grade">6th Grade</option>
+        <option value="7th Grade">7th Grade</option>
+        <option value="8th Grade">8th Grade</option>
+        <option value="9th Grade">9th Grade</option>
+        <option value="10th Grade" selected>10th Grade</option>
+        <option value="11th Grade">11th Grade</option>
+        <option value="12th Grade">12th Grade</option>
+        <option value="College Freshman">College Freshman</option>
+        <option value="College Sophomore">College Sophomore</option>
+        <option value="College Junior">College Junior</option>
+        <option value="College Senior">College Senior</option>
+        <option value="Graduate School">Graduate School</option>
+      </select>
+
+      ${createMethod === 'pdf' ? `
+        <label class="field-label">Study Guide PDF</label>
+        <div class="file-drop ${extractedPdfText ? 'has-file' : ''}" id="pdfDropZone"
+             onclick="document.getElementById('pdfFileInput').click()"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)">
+          ${extractedPdfText
+            ? `✓ ${pdfFileName} — ${extractedPdfText.length.toLocaleString()} characters extracted<br><span style="font-size:11px;">(click or drop another file to replace)</span>`
+            : '📄 Drag and drop your PDF here, or click to browse'}
+        </div>
+        <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none" onchange="handlePdfInputChange(event)" />
+        <div class="status-line" id="pdfStatus"></div>
+      ` : `
+        <label class="field-label">What is your test on?</label>
+        <textarea id="describeInput" placeholder="e.g. Algebra 1B: systems of equations, exponents, quadratic functions, polynomials, radicals"></textarea>
+      `}
+
+      <button class="primary-btn" id="generateBtn" onclick="handleGenerateTest()" ${generatingTest ? 'disabled' : ''}>
+        ${generatingTest ? '<span class="spinner"></span> Generating…' : 'Generate Practice Test'}
+      </button>
+      <div class="status-line error" id="generateError"></div>
+    </div>
+
+    ${lastGeneratedTest ? `
+      <div class="card">
+        <h3 style="margin-top:0;">${lastGeneratedTest.name}</h3>
+        <p style="color:#888; font-size:13px;">${lastGeneratedTest.gradeLevel}</p>
+        <div>${lastGeneratedTest.topics.map(t => `<span class="topic-chip">${t}</span>`).join('')}</div>
+        <button class="primary-btn" onclick="startSession(lastGeneratedTest, true)">Start Practice →</button>
+      </div>
+    ` : ''}
+  `;
+}
+
+function handleDragOver(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('pdfDropZone');
+  if (zone) zone.classList.add('drag-over');
+}
+function handleDragLeave(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('pdfDropZone');
+  if (zone) zone.classList.remove('drag-over');
+}
+function handleDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('pdfDropZone');
+  if (zone) zone.classList.remove('drag-over');
+  const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+  if (file) processPdfFile(file);
+}
+function handlePdfInputChange(event) {
+  const file = event.target.files[0];
+  if (file) processPdfFile(file);
+}
+
+async function processPdfFile(file) {
+  if (file.type && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    const statusEl = document.getElementById('pdfStatus');
+    if (statusEl) statusEl.textContent = 'That doesn\'t look like a PDF file. Please choose a .pdf file.';
+    return;
+  }
+  pdfFileName = file.name;
+  const statusEl = document.getElementById('pdfStatus');
+  if (statusEl) statusEl.innerHTML = '<span class="spinner"></span> Extracting text…';
+  try {
+    if (!window.pdfjsLib) throw new Error('PDF reader library did not load — check your connection and try again');
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      fullText += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    fullText = fullText.trim();
+    if (!fullText) throw new Error('No readable text found in this PDF (it may be scanned images rather than text)');
+    extractedPdfText = fullText;
+    renderCreatePanel();
+  } catch (e) {
+    extractedPdfText = '';
+    if (statusEl) statusEl.textContent = 'Could not read that PDF: ' + e.message;
+    else renderCreatePanel();
+  }
+}
+
+async function handleGenerateTest() {
+  const name = document.getElementById('testNameInput').value.trim() || 'Untitled Test';
+  const gradeLevel = document.getElementById('gradeLevelSelect').value;
+  const errorEl = document.getElementById('generateError');
+  errorEl.textContent = '';
+
+  let sourceText = '';
+  if (createMethod === 'pdf') {
+    if (!extractedPdfText) { errorEl.textContent = 'Please upload a PDF first.'; return; }
+    sourceText = extractedPdfText;
+  } else {
+    sourceText = document.getElementById('describeInput').value.trim();
+    if (!sourceText) { errorEl.textContent = 'Please describe what your test is on.'; return; }
+  }
+
+  generatingTest = true;
+  renderCreatePanel();
+  try {
+    const topics = await aiGenerateTopics(gradeLevel, sourceText);
+    if (!topics.length) throw new Error("No topics came back — try adding more detail.");
+    const test = {
+      id: 'test_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      name,
+      gradeLevel,
+      source: createMethod,
+      context: sourceText,
+      topics,
+      createdAt: Date.now()
+    };
+    await saveTest(test);
+    lastGeneratedTest = test;
+  } catch (e) {
+    errorEl.textContent = "Couldn't generate a test: " + e.message + ". Please try again.";
+  }
+  generatingTest = false;
+  renderCreatePanel();
+}
+
+// ---------------------------------------------------------------------------
+// Previous Tests panel
+// ---------------------------------------------------------------------------
+async function renderPreviousPanel() {
+  const root = document.getElementById('panelPrevious');
+  root.innerHTML = `<div class="loading-block"><span class="spinner"></span> Loading your tests…</div>`;
+  const ids = await listTestIds();
+  if (!ids.length) {
+    root.innerHTML = `<div class="empty-state">No tests yet — create one in the "Create Test" tab.</div>`;
+    return;
+  }
+  const tests = [];
+  for (const key of ids) {
+    const id = key.replace(`test:${currentUser}:`, '');
+    const t = await loadTest(id);
+    if (t) tests.push(t);
+  }
+  tests.sort((a, b) => b.createdAt - a.createdAt);
+
+  const itemsHtml = await Promise.all(tests.map(async (t) => {
+    const progress = await loadProgress(t.id);
+    const lastPlayed = progress && progress.lastPlayed ? new Date(progress.lastPlayed).toLocaleDateString() : 'Never played';
+    return `
+      <div class="test-item">
+        <div>
+          <h4>${t.name}</h4>
+          <p>${t.gradeLevel} · ${t.topics.length} topics · Last played: ${lastPlayed}</p>
+        </div>
+        <div class="actions">
+          <button class="primary-btn" style="margin-top:0;" onclick="resumeTest('${t.id}')">Practice</button>
+          <button class="secondary-btn" onclick="handleDeleteTest('${t.id}')">Delete</button>
+        </div>
+      </div>`;
+  }));
+  root.innerHTML = itemsHtml.join('');
+}
+
+async function handleDeleteTest(id) {
+  await deleteTest(id);
+  renderPreviousPanel();
+}
+
+async function resumeTest(id) {
+  const t = await loadTest(id);
+  if (t) startSession(t, false);
+}
+
+// ---------------------------------------------------------------------------
+// Quiz session (AI-generated questions, adaptive 0-100% difficulty per topic)
+// ---------------------------------------------------------------------------
+async function startSession(test, isNew) {
+  activeTest = test;
+  const progress = await loadProgress(test.id);
+  sessionPercent = progress && progress.percent && progress.percent.length === test.topics.length
+    ? progress.percent.slice()
+    : new Array(test.topics.length).fill(50);
+  sessionRound = progress && progress.round ? progress.round : 1;
+
+  document.getElementById('panelCreate').classList.remove('active');
+  document.getElementById('panelPrevious').classList.remove('active');
+  document.getElementById('panelQuiz').classList.add('active');
+
+  await buildSessionRound();
+}
+
+async function buildSessionRound() {
+  sessionTopicSequence = buildTopicSequence(activeTest.topics.length);
+  const total = sessionTopicSequence.length;
+  sessionQuestions = new Array(total).fill(null);
+  sessionAnswers = new Array(total).fill(null);
+  sessionAppliedStep = new Array(total).fill(null);
+  sessionReported = new Array(total).fill(false);
+  sessionReportOpen = new Array(total).fill(false);
+  sessionCurrent = 0;
+  sessionLoading = true;
+  sessionLoadError = null;
+  renderQuiz();
+  await loadQuestionAt(0);
+}
+
+async function loadQuestionAt(index) {
+  sessionLoading = true;
+  sessionLoadError = null;
+  renderQuiz();
+  try {
+    const topicIndex = sessionTopicSequence[index];
+    const topic = activeTest.topics[topicIndex];
+    const percent = sessionPercent[topicIndex];
+    let q = await generateVerifiedQuestion(topic, percent, activeTest.gradeLevel, activeTest.context);
+    q.topic = topic;
+    q.topicIndex = topicIndex;
+    q.percent = percent;
+    sessionQuestions[index] = q;
+    sessionLoading = false;
+  } catch (e) {
+    sessionLoading = false;
+    sessionLoadError = "Couldn't generate that question (" + e.message + ").";
+  }
+  renderQuiz();
+}
+
+function stepAmountFor() { return Math.floor(Math.random() * 2) + 1; }
+
+// ---------------------------------------------------------------------------
+// Coordinate plane SVG renderer — draws exactly the lines/curves/points the
+// AI specifies numerically, rather than trying to generate a raster image
+// ---------------------------------------------------------------------------
+function renderGraphSvg(graph) {
+  if (!graph) return '';
+  const width = 320, height = 320, pad = 34;
+  const xMin = graph.xMin ?? -10, xMax = graph.xMax ?? 10;
+  const yMin = graph.yMin ?? -10, yMax = graph.yMax ?? 10;
+  const xSpan = (xMax - xMin) || 1, ySpan = (yMax - yMin) || 1;
+  const xScale = (width - 2 * pad) / xSpan;
+  const yScale = (height - 2 * pad) / ySpan;
+  function toPx(x, y) {
+    return { px: pad + (x - xMin) * xScale, py: height - pad - (y - yMin) * yScale };
+  }
+  const clipId = 'plotClip' + Math.random().toString(36).slice(2, 9);
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" style="max-width:320px; width:100%; background:#fff; border:1px solid #e2e2e2; border-radius:8px; margin-bottom:14px;">`;
+  svg += `<defs><clipPath id="${clipId}"><rect x="${pad}" y="${pad}" width="${width - 2 * pad}" height="${height - 2 * pad}"/></clipPath></defs>`;
+
+  // gridlines + axis tick labels at integer steps (skip labels if range too wide to stay readable)
+  const step = xSpan > 24 ? Math.ceil(xSpan / 12) : 1;
+  for (let gx = Math.ceil(xMin / step) * step; gx <= xMax; gx += step) {
+    const { px } = toPx(gx, 0);
+    svg += `<line x1="${px}" y1="${pad}" x2="${px}" y2="${height - pad}" stroke="#eee" stroke-width="1"/>`;
+    if (gx !== 0) svg += `<text x="${px}" y="${height - pad + 14}" font-size="9" fill="#999" text-anchor="middle">${gx}</text>`;
+  }
+  const yStep = ySpan > 24 ? Math.ceil(ySpan / 12) : 1;
+  for (let gy = Math.ceil(yMin / yStep) * yStep; gy <= yMax; gy += yStep) {
+    const { py } = toPx(0, gy);
+    svg += `<line x1="${pad}" y1="${py}" x2="${width - pad}" y2="${py}" stroke="#eee" stroke-width="1"/>`;
+    if (gy !== 0) svg += `<text x="${pad - 6}" y="${py + 3}" font-size="9" fill="#999" text-anchor="end">${gy}</text>`;
+  }
+
+  // axes
+  const origin = toPx(0, 0);
+  svg += `<line x1="${pad}" y1="${origin.py}" x2="${width - pad}" y2="${origin.py}" stroke="#333" stroke-width="1.5"/>`;
+  svg += `<line x1="${origin.px}" y1="${pad}" x2="${origin.px}" y2="${height - pad}" stroke="#333" stroke-width="1.5"/>`;
+
+  // Lines and curves are drawn at their TRUE, unclamped coordinates and then
+  // clipped by the SVG clipPath above — this guarantees they're geometrically
+  // exact and will always pass through any points that are truly on them,
+  // instead of the line bending away from its real path near the edges.
+  svg += `<g clip-path="url(#${clipId})">`;
+
+  // lines: y = mx + b
+  (graph.lines || []).forEach(line => {
+    const m = line.slope, b = line.intercept;
+    const p1 = toPx(xMin, m * xMin + b);
+    const p2 = toPx(xMax, m * xMax + b);
+    const color = line.color || '#bf5700';
+    svg += `<line x1="${p1.px}" y1="${p1.py}" x2="${p2.px}" y2="${p2.py}" stroke="${color}" stroke-width="2.5"/>`;
+  });
+
+  // curves: y = ax^2 + bx + c
+  (graph.curves || []).forEach(curve => {
+    const { a, b: bb, c } = curve;
+    const steps = 100;
+    let d = '';
+    for (let i = 0; i <= steps; i++) {
+      const x = xMin + (xMax - xMin) * i / steps;
+      const y = a * x * x + bb * x + c;
+      const { px, py } = toPx(x, y);
+      d += (i === 0 ? 'M' : 'L') + px.toFixed(1) + ',' + py.toFixed(1) + ' ';
+    }
+    const color = curve.color || '#1e7e34';
+    svg += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5"/>`;
+  });
+
+  svg += `</g>`;
+
+  // labels drawn outside the clip group so they're never accidentally cut off
+  (graph.lines || []).forEach(line => {
+    if (!line.label) return;
+    const m = line.slope, b = line.intercept;
+    const p2 = toPx(xMax, Math.max(yMin, Math.min(yMax, m * xMax + b)));
+    const color = line.color || '#bf5700';
+    svg += `<text x="${p2.px - 4}" y="${p2.py - 6}" font-size="11" fill="${color}" text-anchor="end" font-weight="600">${line.label}</text>`;
+  });
+  (graph.curves || []).forEach(curve => {
+    if (!curve.label) return;
+    const { a, b: bb, c } = curve;
+    const labelX = xMax - (xMax - xMin) * 0.15;
+    const labelY = Math.max(yMin, Math.min(yMax, a * labelX * labelX + bb * labelX + c));
+    const { px, py } = toPx(labelX, labelY);
+    const color = curve.color || '#1e7e34';
+    svg += `<text x="${px}" y="${py - 8}" font-size="11" fill="${color}" font-weight="600">${curve.label}</text>`;
+  });
+
+  // points (drawn on top, at their true coordinates)
+  (graph.points || []).forEach(pt => {
+    const { px, py } = toPx(pt.x, pt.y);
+    svg += `<circle cx="${px}" cy="${py}" r="4" fill="#1a1a2e"/>`;
+    if (pt.label) svg += `<text x="${px + 7}" y="${py - 7}" font-size="12" fill="#1a1a2e" font-weight="600">${pt.label}</text>`;
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+function gradeTextAnswer(userVal, correctVal) {
+  if (isNaN(userVal)) return { isCorrect: false, step: 2 };
+  const diff = Math.abs(userVal - correctVal);
+  const scale = Math.max(Math.abs(correctVal), 1);
+  const relError = diff / scale;
+  const isCorrect = relError <= 0.02;
+  let step;
+  if (isCorrect) step = relError === 0 ? 2 : 1;
+  else { const closeness = Math.max(0, 1 - Math.min(1, relError)); step = closeness > 0.5 ? 1 : 2; }
+  return { isCorrect, step };
+}
+
+function renderQuiz() {
+  const root = document.getElementById('panelQuiz');
+  const total = sessionTopicSequence.length;
+  const answeredCount = sessionAnswers.filter(a => a !== null).length;
+
+  if (sessionCurrent === total) {
+    let score = 0;
+    sessionAnswers.forEach((a, i) => { if (a !== null && isAnsCorrectAt(i)) score++; });
+    saveProgress(activeTest.id, { percent: sessionPercent, round: sessionRound + 1, lastPlayed: Date.now() });
+    const rows = sessionQuestions.map((q, i) => {
+      if (!q) return '';
+      const skipped = sessionAnswers[i] === null;
+      const correct = !skipped && isAnsCorrectAt(i);
+      const markClass = skipped ? '' : (correct ? 'mark-correct' : 'mark-incorrect');
+      const markSymbol = skipped ? '—' : (correct ? '✓' : '✗');
+      return `<tr>
+        <td>${q.topic}</td>
+        <td>${q.percent}%</td>
+        <td>${skipped ? 'Skipped' : ansDisplayAt(i)}</td>
+        <td>${correctDisplayAt(q)}</td>
+        <td class="${markClass}">${markSymbol}</td>
+      </tr>`;
+    }).join('');
+    root.innerHTML = `
+      <div class="quiz-header">
+        <h1>${activeTest.name}</h1>
+        <p>Round ${sessionRound} complete</p>
+      </div>
+      <div class="q-card" style="text-align:center;">
+        <h2 style="font-size:26px; margin:0 0 8px;">${score} / ${total}</h2>
+        <p style="color:#666; font-size:13px;">Right answers move that topic's difficulty up, wrong ones move it down — and it's saved for next time.</p>
+        <table class="result-table">
+          <tr><th>Topic</th><th>Difficulty</th><th>Your Answer</th><th>Correct</th><th>Result</th></tr>
+          ${rows}
+        </table>
+        <button class="primary-btn" onclick="buildSessionRound()">Start Round ${sessionRound + 1} →</button>
+        <button class="secondary-btn" onclick="exitSession()">Back to Previous Tests</button>
+      </div>
+    `;
+    return;
+  }
+
+  const q = sessionQuestions[sessionCurrent];
+  const userAnswer = sessionAnswers[sessionCurrent];
+  const dots = sessionTopicSequence.map((_, i) => {
+    let cls = '';
+    if (sessionAnswers[i] !== null) cls = isAnsCorrectAt(i) ? 'correct' : 'incorrect';
+    return `<div class="dot ${cls} ${i === sessionCurrent ? 'current' : ''}"></div>`;
+  }).join('');
+
+  if (sessionLoading) {
+    root.innerHTML = `
+      <div class="quiz-header"><h1>${activeTest.name}</h1><p>Round ${sessionRound} · Question ${sessionCurrent + 1} of ${total}</p></div>
+      <div class="dot-row">${dots}</div>
+      <div class="loading-block"><span class="spinner"></span> Generating your next question…</div>
+    `;
+    return;
+  }
+
+  if (sessionLoadError) {
+    root.innerHTML = `
+      <div class="quiz-header"><h1>${activeTest.name}</h1><p>Round ${sessionRound} · Question ${sessionCurrent + 1} of ${total}</p></div>
+      <div class="dot-row">${dots}</div>
+      <div class="q-card">
+        <p class="status-line error">${sessionLoadError}</p>
+        <button class="primary-btn" onclick="loadQuestionAt(sessionCurrent)">Try Again</button>
+        <button class="secondary-btn" onclick="skipSession()">Skip Instead</button>
+      </div>
+    `;
+    return;
+  }
+
+  const diffColor = q.percent < 34 ? '#34a853' : (q.percent < 67 ? '#d47f1a' : '#c62828');
+
+  let shiftHtml = '';
+  if (userAnswer !== null) {
+    const wasCorrect = isAnsCorrectAt(sessionCurrent);
+    const step = sessionAppliedStep[sessionCurrent] || 1;
+    if (wasCorrect && q.percent < 100) shiftHtml = `<div class="shift-note show shift-up">↑ Nice work — this topic moves up to ${Math.min(100, q.percent + step)}% next round.</div>`;
+    else if (!wasCorrect && q.percent > 0) shiftHtml = `<div class="shift-note show shift-down">↓ This topic moves down to ${Math.max(0, q.percent - step)}% next round.</div>`;
+  }
+
+  root.innerHTML = `
+    <div class="quiz-header"><h1>${activeTest.name}</h1><p>Round ${sessionRound} · Question ${sessionCurrent + 1} of ${total} · Adaptive difficulty</p></div>
+    <div class="dot-row">${dots}</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${(answeredCount/total)*100}%"></div></div>
+    <div class="q-card">
+      <div class="q-top-row">
+        <div class="q-topic">${q.topic}</div>
+        <div class="diff-badge" style="background:${diffColor}">${q.percent}%</div>
+      </div>
+      <div class="q-text">${q.text}</div>
+      ${q.graph ? renderGraphSvg(q.graph) : ''}
+      ${q.type === 'text' ? `
+        <div id="textAnswerArea">
+          ${userAnswer === null ? `
+            <div class="text-input-row">
+              <input type="text" id="quizTextInput" class="text-input-inline" placeholder="____" />
+              ${q.unit ? `<span class="unit-label">${q.unit}</span>` : ''}
+            </div>
+            <button class="nav-btn primary" style="margin-top:10px;" onclick="submitSessionText()">Submit</button>
+          ` : `
+            <div class="text-answer-result ${isAnsCorrectAt(sessionCurrent) ? 'correct' : 'incorrect'}">
+              Your answer: (${userAnswer.raw})${q.unit ? ' ' + q.unit : ''} — Correct answer: (${q.numericAnswer})${q.unit ? ' ' + q.unit : ''}
+            </div>
+          `}
+        </div>
+      ` : `<div id="quizChoicesArea"></div>`}
+      <div class="explain ${userAnswer !== null ? 'show' : ''}">${q.explain || ''}</div>
+      ${shiftHtml}
+      ${userAnswer !== null ? `
+        <div style="margin-top:12px;">
+          ${sessionReported[sessionCurrent]
+            ? `<span class="status-line" style="color:#1e7e34;">✓ Reported — thanks for flagging this.</span>`
+            : sessionReportOpen[sessionCurrent]
+              ? `
+                <div style="border:1px solid #e53935; border-radius:8px; padding:12px; background:#fdecea;">
+                  <label class="field-label" style="color:#c62828;">What went wrong?</label>
+                  <textarea id="reportCommentInput" placeholder="e.g. the marked answer looks wrong, the question doesn't make sense, etc." style="width:100%; min-height:70px; padding:8px 10px; border:1px solid #e53935; border-radius:8px; font-size:13px; font-family:inherit;"></textarea>
+                  <div style="margin-top:8px; display:flex; gap:8px;">
+                    <button class="nav-btn primary" style="background:#c62828; border-color:#c62828;" onclick="reportCurrentQuestion()">Submit Report</button>
+                    <button class="nav-btn" onclick="cancelReportForm()">Cancel</button>
+                  </div>
+                </div>
+              `
+              : `<button class="nav-btn" style="color:#c62828; border-color:#c62828; font-size:12px; padding:6px 12px;" onclick="openReportForm()">🚩 Report this question</button>`}
+        </div>
+      ` : ''}
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevSession()" ${sessionCurrent === 0 ? 'disabled' : ''}>← Previous</button>
+      ${userAnswer === null
+        ? `<button class="nav-btn" onclick="skipSession()">Skip (keeps difficulty the same) →</button>`
+        : `<button class="nav-btn primary" onclick="nextSession()">${sessionCurrent === total - 1 ? 'See Results' : 'Next →'}</button>`}
+    </div>
+  `;
+
+  if (q.type === 'text') {
+    if (userAnswer === null) {
+      const inputEl = document.getElementById('quizTextInput');
+      inputEl.focus();
+      inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitSessionText(); });
+    }
+  } else {
+    const choicesArea = document.getElementById('quizChoicesArea');
+    (q.choices || []).forEach((choice, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice';
+      btn.textContent = String.fromCharCode(65 + i) + ". " + choice;
+      if (userAnswer !== null) {
+        btn.disabled = true;
+        if (i === q.correct) btn.classList.add('correct');
+        else if (i === userAnswer) btn.classList.add('incorrect');
+      }
+      btn.onclick = () => selectSessionAnswer(i);
+      choicesArea.appendChild(btn);
+    });
+  }
+}
+
+function isAnsCorrectAt(i) {
+  const a = sessionAnswers[i];
+  const q = sessionQuestions[i];
+  if (a === null || !q) return null;
+  return q.type === 'text' ? a.isCorrect : a === q.correct;
+}
+function ansDisplayAt(i) {
+  const a = sessionAnswers[i];
+  const q = sessionQuestions[i];
+  if (a === null) return '—';
+  return q.type === 'text' ? `${a.raw}${q.unit ? ' ' + q.unit : ''}` : String.fromCharCode(65 + a);
+}
+function correctDisplayAt(q) {
+  return q.type === 'text' ? `${q.numericAnswer}${q.unit ? ' ' + q.unit : ''}` : String.fromCharCode(65 + q.correct);
+}
+
+function openReportForm() {
+  sessionReportOpen[sessionCurrent] = true;
+  renderQuiz();
+}
+function cancelReportForm() {
+  sessionReportOpen[sessionCurrent] = false;
+  renderQuiz();
+}
+
+async function reportCurrentQuestion() {
+  if (sessionReported[sessionCurrent]) return;
+  const q = sessionQuestions[sessionCurrent];
+  const commentEl = document.getElementById('reportCommentInput');
+  const comment = commentEl ? commentEl.value.trim() : '';
+  const report = {
+    id: 'report_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    reportedBy: currentUser,
+    testId: activeTest.id,
+    testName: activeTest.name,
+    gradeLevel: activeTest.gradeLevel,
+    topic: q.topic,
+    questionText: q.text,
+    type: q.type,
+    choices: q.choices || null,
+    correctIndex: q.type === 'mc' ? q.correct : null,
+    numericAnswer: q.type === 'text' ? q.numericAnswer : null,
+    unit: q.unit || '',
+    explain: q.explain || '',
+    userAnswerDisplay: ansDisplayAt(sessionCurrent),
+    comment: comment,
+    createdAt: Date.now()
+  };
+  await storageSafeSet(`report:${report.id}`, JSON.stringify(report));
+  sessionReported[sessionCurrent] = true;
+  sessionReportOpen[sessionCurrent] = false;
+  renderQuiz();
+}
+
+function applyDifficultyShift(topicIndex, isCorrect, step) {
+  if (isCorrect) sessionPercent[topicIndex] = Math.min(100, sessionPercent[topicIndex] + step);
+  else sessionPercent[topicIndex] = Math.max(0, sessionPercent[topicIndex] - step);
+}
+
+function selectSessionAnswer(i) {
+  if (sessionAnswers[sessionCurrent] !== null) return;
+  const q = sessionQuestions[sessionCurrent];
+  sessionAnswers[sessionCurrent] = i;
+  const wasCorrect = i === q.correct;
+  const step = stepAmountFor();
+  sessionAppliedStep[sessionCurrent] = step;
+  applyDifficultyShift(q.topicIndex, wasCorrect, step);
+  renderQuiz();
+}
+
+function submitSessionText() {
+  if (sessionAnswers[sessionCurrent] !== null) return;
+  const input = document.getElementById('quizTextInput');
+  if (!input) return;
+  const rawVal = input.value.trim();
+  if (rawVal === '') { input.style.borderColor = '#e53935'; input.placeholder = 'Type a number first'; input.focus(); return; }
+  const userVal = parseFloat(rawVal);
+  const q = sessionQuestions[sessionCurrent];
+  const grade = gradeTextAnswer(userVal, q.numericAnswer);
+  sessionAnswers[sessionCurrent] = { raw: rawVal, isCorrect: grade.isCorrect, userVal };
+  sessionAppliedStep[sessionCurrent] = grade.step;
+  applyDifficultyShift(q.topicIndex, grade.isCorrect, grade.step);
+  renderQuiz();
+}
+
+async function nextSession() {
+  sessionCurrent++;
+  if (sessionCurrent < sessionTopicSequence.length && !sessionQuestions[sessionCurrent]) {
+    await loadQuestionAt(sessionCurrent);
+  } else {
+    renderQuiz();
+  }
+}
+async function skipSession() {
+  sessionCurrent++;
+  if (sessionCurrent < sessionTopicSequence.length && !sessionQuestions[sessionCurrent]) {
+    await loadQuestionAt(sessionCurrent);
+  } else {
+    renderQuiz();
+  }
+}
+function prevSession() {
+  if (sessionCurrent > 0) { sessionCurrent--; renderQuiz(); }
+}
+function exitSession() {
+  document.getElementById('panelQuiz').classList.remove('active');
+  switchTab('previous');
+}
+
+// ---------------------------------------------------------------------------
+// Auth gate UI
+// ---------------------------------------------------------------------------
+function setAuthMode(mode) {
+  authMode = mode;
+  renderAuthGate();
+}
+
+async function renderAuthGate() {
+  const tabBar = document.getElementById('tabBar');
+  const appHeader = document.getElementById('appHeader');
+  const userBar = document.getElementById('userBar');
+  const authPanel = document.getElementById('panelAuth');
+
+  if (currentUser) {
+    tabBar.style.display = 'flex';
+    appHeader.style.display = 'flex';
+    const isAdminUser = await isCurrentUserAdmin();
+    userBar.innerHTML = `<div class="user-bar">Logged in as <strong>${currentUser}</strong> ${isAdminUser ? '<button onclick="showAdminPanel()">Admin Panel</button>' : ''} <button onclick="handleLogout()">Log out</button></div>`;
+    authPanel.classList.remove('active');
+    authPanel.innerHTML = '';
+    switchTab('create');
+    return;
+  }
+
+  tabBar.style.display = 'none';
+  appHeader.style.display = 'none';
+  userBar.innerHTML = '';
+  document.getElementById('panelCreate').classList.remove('active');
+  document.getElementById('panelPrevious').classList.remove('active');
+  document.getElementById('panelQuiz').classList.remove('active');
+  authPanel.classList.add('active');
+
+  authPanel.innerHTML = `
+    <div class="auth-card">
+      <h1 style="text-align:center; font-size:26px; color:#1a1a2e; margin:0 0 4px; letter-spacing:-0.5px;">StudyAI</h1>
+      <h2>${authMode === 'login' ? 'Log In' : 'Create an Account'}</h2>
+      <div class="auth-toggle">
+        <button type="button" class="${authMode === 'login' ? 'active' : ''}" onclick="setAuthMode('login')">Log In</button>
+        <button type="button" class="${authMode === 'register' ? 'active' : ''}" onclick="setAuthMode('register')">Sign Up</button>
+      </div>
+      <label class="field-label">Username</label>
+      <input type="text" id="authUsername" name="username" placeholder="Username" autocomplete="username" />
+      <label class="field-label">Password</label>
+      <input type="password" id="authPassword" name="password" placeholder="Password" autocomplete="${authMode === 'login' ? 'current-password' : 'new-password'}" />
+      <button type="button" class="primary-btn" style="width:100%;" onclick="submitAuthForm()">${authMode === 'login' ? 'Log In' : 'Sign Up'}</button>
+      <div class="status-line error" id="authError" style="text-align:center; margin-top:10px;"></div>
+      <p style="font-size:11px; color:#999; text-align:center; margin-top:14px;">
+        This is a simple per-device login for keeping your tests separate — not secure enough for a password you use anywhere important.
+      </p>
+    </div>
+  `;
+
+  const pwInput = document.getElementById('authPassword');
+  const userInput = document.getElementById('authUsername');
+  pwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAuthForm(); });
+  userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAuthForm(); });
+}
+
+async function submitAuthForm() {
+  const username = document.getElementById('authUsername').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errorEl = document.getElementById('authError');
+  errorEl.textContent = '';
+  const btn = document.querySelector('.auth-card .primary-btn');
+  btn.disabled = true;
+  btn.textContent = 'Please wait…';
+  try {
+    const err = authMode === 'login' ? await handleLogin(username, password) : await handleRegister(username, password);
+    if (err) {
+      if (authMode === 'login' && err.includes('No account found')) {
+        errorEl.innerHTML = `${err} <a href="#" onclick="setAuthMode('register'); return false;" style="color:#bf5700; font-weight:600;">Sign up instead?</a>`;
+      } else {
+        errorEl.textContent = err;
+      }
+      btn.disabled = false;
+      btn.textContent = authMode === 'login' ? 'Log In' : 'Sign Up';
+      return;
+    }
+    renderAuthGate();
+  } catch (e) {
+    errorEl.textContent = 'Something went wrong (' + (e && e.message ? e.message : 'unknown error') + '). Please try again.';
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Log In' : 'Sign Up';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Admin panel (integrated into this same artifact so it shares storage
+// with the rest of the app — a separate artifact file would NOT reliably
+// share the same storage bucket)
+// ---------------------------------------------------------------------------
+let adminUnlocked = false;
+const ADMIN_PASSCODE = 'Kn0w1edg3!';
+const ADMIN_USERNAMES = ['ragved']; // accounts that see the Admin Panel button
+let cachedAdminUsers = [];
+let cachedAdminTests = [];
+let cachedAdminProgressCount = 0;
+let cachedDynamicAdmins = [];
+let cachedAdminReports = [];
+let adminSelectedUserFilter = null;
+
+async function adminListKeys(prefix) {
+  try { const r = await window.storage.list(prefix, true); return r ? r.keys : []; }
+  catch (e) { return []; }
+}
+async function adminGetVal(key) {
+  try { const r = await window.storage.get(key, true); return r ? r.value : null; }
+  catch (e) { return null; }
+}
+async function adminDelKey(key) {
+  try { await window.storage.delete(key, true); return true; }
+  catch (e) { return false; }
+}
+
+function showAdminPanel() {
+  document.getElementById('panelAuth').classList.remove('active');
+  document.getElementById('panelCreate').classList.remove('active');
+  document.getElementById('panelPrevious').classList.remove('active');
+  document.getElementById('panelQuiz').classList.remove('active');
+  document.getElementById('tabBar').style.display = 'none';
+  document.getElementById('panelAdmin').classList.add('active');
+  if (adminUnlocked) renderAdminPanel(); else renderAdminGate();
+}
+
+function exitAdminPanel() {
+  document.getElementById('panelAdmin').classList.remove('active');
+  if (currentUser) { renderAuthGate(); } else { authMode = 'login'; renderAuthGate(); }
+}
+
+function renderAdminGate() {
+  const root = document.getElementById('panelAdmin');
+  root.innerHTML = `
+    <div class="auth-card">
+      <h2 style="margin-top:0;">Admin Panel</h2>
+      <p style="font-size:13px; color:#888; text-align:center;">Enter the admin passcode to continue.</p>
+      <input type="password" id="adminPasscodeInput" placeholder="Passcode" />
+      <button type="button" class="primary-btn" style="width:100%; margin-top:12px;" onclick="checkAdminPasscode()">Unlock</button>
+      <p id="adminGateError" class="status-line error" style="text-align:center;"></p>
+      <p style="text-align:center; margin-top:10px;"><a href="#" onclick="exitAdminPanel(); return false;" style="font-size:12px; color:#999;">← Back</a></p>
+    </div>
+  `;
+  const input = document.getElementById('adminPasscodeInput');
+  input.focus();
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkAdminPasscode(); });
+}
+
+function checkAdminPasscode() {
+  const val = document.getElementById('adminPasscodeInput').value;
+  if (val === ADMIN_PASSCODE) {
+    adminUnlocked = true;
+    renderAdminPanel();
+  } else {
+    document.getElementById('adminGateError').textContent = 'Incorrect passcode.';
+  }
+}
+
+async function renderAdminPanel() {
+  const root = document.getElementById('panelAdmin');
+  root.innerHTML = `<p class="empty-state"><span class="spinner"></span> Loading data…</p>`;
+
+  const userKeys = await adminListKeys('user:');
+  const testKeys = await adminListKeys('test:');
+  const progressKeys = await adminListKeys('progress:');
+  const reportKeys = await adminListKeys('report:');
+
+  const users = [];
+  for (const key of userKeys) {
+    const username = key.replace(/^user:/, '');
+    const raw = await adminGetVal(key);
+    if (raw) users.push({ username, ...JSON.parse(raw) });
+  }
+
+  const tests = [];
+  for (const key of testKeys) {
+    const raw = await adminGetVal(key);
+    if (raw) {
+      const t = JSON.parse(raw);
+      const parts = key.split(':'); // test:{username}:{id}
+      tests.push({ key, owner: parts[1], ...t });
+    }
+  }
+
+  const reports = [];
+  for (const key of reportKeys) {
+    const raw = await adminGetVal(key);
+    if (raw) reports.push({ key, ...JSON.parse(raw) });
+  }
+  reports.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  cachedAdminUsers = users;
+  cachedDynamicAdmins = await loadDynamicAdmins();
+  cachedAdminTests = tests;
+  cachedAdminProgressCount = progressKeys.length;
+  cachedAdminReports = reports;
+  renderAdminUI();
+}
+
+function selectAdminUserFilter(username) {
+  adminSelectedUserFilter = (adminSelectedUserFilter === username) ? null : username;
+  renderAdminUI();
+}
+
+function renderAdminUI() {
+  const root = document.getElementById('panelAdmin');
+  const users = cachedAdminUsers;
+  const tests = cachedAdminTests;
+
+  const usersHtml = users.length ? `
+    <table class="result-table">
+      <tr><th>Username</th><th>Created</th><th>Tests Owned</th><th>Role</th><th></th></tr>
+      ${users.map(u => {
+        const testCount = tests.filter(t => t.owner === u.username).length;
+        const isSelected = adminSelectedUserFilter === u.username;
+        const isBootstrapAdmin = ADMIN_USERNAMES.includes(u.username);
+        const isDynamicAdmin = cachedDynamicAdmins.includes(u.username);
+        let roleCell;
+        if (isBootstrapAdmin) {
+          roleCell = `<span class="topic-chip">Admin (built-in)</span>`;
+        } else if (isDynamicAdmin) {
+          roleCell = `<span class="topic-chip">Admin</span> <button class="nav-btn" style="padding:3px 8px; font-size:11px;" onclick="event.stopPropagation(); adminRevoke('${u.username}')">Revoke</button>`;
+        } else {
+          roleCell = `<button class="nav-btn" style="padding:3px 8px; font-size:11px;" onclick="event.stopPropagation(); adminPromote('${u.username}')">Make Admin</button>`;
+        }
+        return `<tr style="cursor:pointer; ${isSelected ? 'background:#fff4e0;' : ''}" onclick="selectAdminUserFilter('${u.username}')">
+          <td>${u.username}${isSelected ? ' <span style="color:#bf5700; font-size:11px;">(viewing ▼)</span>' : ''}</td>
+          <td>${u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>
+          <td>${testCount}</td>
+          <td>${roleCell}</td>
+          <td><button class="nav-btn" style="color:#c62828; border-color:#c62828;" onclick="event.stopPropagation(); adminDeleteUser('${u.username}')">Delete</button></td>
+        </tr>`;
+      }).join('')}
+    </table>
+  ` : `<p class="empty-state">No accounts yet.</p>`;
+
+  const visibleTests = adminSelectedUserFilter ? tests.filter(t => t.owner === adminSelectedUserFilter) : tests;
+  const testsHeading = adminSelectedUserFilter
+    ? `Tests for "${adminSelectedUserFilter}" <button class="nav-btn" style="margin-left:8px; padding:3px 10px; font-size:11px;" onclick="selectAdminUserFilter('${adminSelectedUserFilter}')">Show All</button>`
+    : `All Tests`;
+  const testsHtml = visibleTests.length ? `
+    <table class="result-table">
+      <tr><th>Test Name</th><th>Owner</th><th>Grade Level</th><th>Topics</th><th></th></tr>
+      ${visibleTests.map(t => `<tr>
+        <td>${t.name}</td>
+        <td>${t.owner}</td>
+        <td>${t.gradeLevel}</td>
+        <td>${(t.topics || []).map(topic => `<span class="topic-chip">${topic}</span>`).join('')}</td>
+        <td><button class="nav-btn" style="color:#c62828; border-color:#c62828;" onclick="adminDeleteTest('${t.key}', '${t.owner}', '${t.id}')">Delete</button></td>
+      </tr>`).join('')}
+    </table>
+  ` : `<p class="empty-state">${adminSelectedUserFilter ? `"${adminSelectedUserFilter}" hasn't created any tests yet.` : 'No tests created yet.'}</p>`;
+
+  const reportsHtml = cachedAdminReports.length ? `
+    <table class="result-table">
+      <tr><th>Reported By</th><th>Test / Topic</th><th>Question</th><th>Their Answer</th><th>Marked Correct</th><th>Comment</th><th>When</th><th></th></tr>
+      ${cachedAdminReports.map(r => `<tr>
+        <td>${r.reportedBy}</td>
+        <td>${r.testName}<br><span style="color:#888; font-size:11px;">${r.topic}</span></td>
+        <td style="max-width:220px;">${r.questionText}</td>
+        <td>${r.userAnswerDisplay || '—'}</td>
+        <td>${r.type === 'text' ? `${r.numericAnswer}${r.unit ? ' ' + r.unit : ''}` : (r.choices && r.correctIndex !== null ? `${String.fromCharCode(65 + r.correctIndex)}. ${r.choices[r.correctIndex]}` : '—')}</td>
+        <td style="max-width:220px; font-style:${r.comment ? 'normal' : 'italic'}; color:${r.comment ? '#1a1a2e' : '#999'};">${r.comment || 'No comment left'}</td>
+        <td>${r.createdAt ? new Date(r.createdAt).toLocaleString() : '—'}</td>
+        <td><button class="nav-btn" style="color:#c62828; border-color:#c62828;" onclick="adminDismissReport('${r.key}')">Dismiss</button></td>
+      </tr>`).join('')}
+    </table>
+  ` : `<p class="empty-state">No reported questions.</p>`;
+
+  root.innerHTML = `
+    <div class="quiz-header"><h1>Admin Panel</h1><p>Click an account to see just their tests.</p></div>
+    <div class="dot-row"></div>
+    <div class="q-card">
+      <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+        <div class="topic-chip">${users.length} accounts</div>
+        <div class="topic-chip">${tests.length} tests</div>
+        <div class="topic-chip">${cachedAdminProgressCount} progress records</div>
+        <div class="topic-chip" style="${cachedAdminReports.length ? 'background:#fdecea; color:#c62828;' : ''}">${cachedAdminReports.length} reported questions</div>
+      </div>
+      <h3>Accounts</h3>
+      ${usersHtml}
+      <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
+        <input type="text" id="promoteUsernameInput" placeholder="username to promote" style="max-width:220px; padding:8px 12px; border:1px solid #ccc; border-radius:8px; font-size:13px;" />
+        <button class="nav-btn" onclick="adminPromoteFromInput()">Make Admin</button>
+      </div>
+      <div class="status-line" id="promoteStatus" style="margin-top:6px;"></div>
+      <h3 style="margin-top:20px; color:#c62828;">Reported Questions</h3>
+      ${reportsHtml}
+      <h3 style="margin-top:20px;">${testsHeading}</h3>
+      ${testsHtml}
+      <h3 style="margin-top:20px; color:#c62828;">Danger Zone</h3>
+      <p style="font-size:13px; color:#666;">Permanently deletes every account, test, and progress record. No undo.</p>
+      <button class="nav-btn" style="background:#c62828; color:#fff; border:none;" onclick="adminResetAll()">Reset All Accounts</button>
+      <button class="nav-btn" style="margin-left:8px;" onclick="renderAdminPanel()">Refresh</button>
+      <div class="status-line" id="adminStatus" style="margin-top:10px;"></div>
+    </div>
+    <button class="nav-btn" onclick="exitAdminPanel()">← Back to App</button>
+  `;
+}
+
+async function adminDismissReport(key) {
+  await adminDelKey(key);
+  renderAdminPanel();
+}
+
+async function adminPromoteFromInput() {
+  const input = document.getElementById('promoteUsernameInput');
+  const username = (input.value || '').trim().toLowerCase();
+  const statusEl = document.getElementById('promoteStatus');
+  if (!username) { statusEl.textContent = 'Enter a username first.'; return; }
+  await adminPromote(username, statusEl);
+}
+
+async function adminPromote(username, statusEl) {
+  statusEl = statusEl || document.getElementById('promoteStatus');
+  const exists = await adminGetVal(`user:${username}`);
+  if (!exists) { statusEl.textContent = `No account found with username "${username}".`; return; }
+  if (ADMIN_USERNAMES.includes(username)) { statusEl.textContent = `"${username}" is already a built-in admin.`; renderAdminPanel(); return; }
+  const list = await loadDynamicAdmins();
+  if (!list.includes(username)) list.push(username);
+  await saveDynamicAdmins(list);
+  statusEl.textContent = `"${username}" is now an admin.`;
+  renderAdminPanel();
+}
+
+async function adminRevoke(username) {
+  const list = await loadDynamicAdmins();
+  const updated = list.filter(u => u !== username);
+  await saveDynamicAdmins(updated);
+  renderAdminPanel();
+}
+
+// ---------------------------------------------------------------------------
+// Custom confirm dialog (window.confirm() is blocked by this sandboxed
+// iframe, the same way form submission was — so we build our own instead
+// of relying on the native browser dialog)
+// ---------------------------------------------------------------------------
+function showConfirmDialog(message, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:9999;';
+  overlay.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:24px; max-width:360px; box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+      <p style="font-size:14px; color:#1a1a2e; margin:0 0 18px;">${message}</p>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="confirmDialogCancel" style="padding:8px 16px; border:1px solid #999; border-radius:8px; background:#fff; color:#555; cursor:pointer; font-size:13px;">Cancel</button>
+        <button id="confirmDialogOk" style="padding:8px 16px; border:none; border-radius:8px; background:#c62828; color:#fff; cursor:pointer; font-size:13px; font-weight:600;">Delete</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('confirmDialogCancel').onclick = () => overlay.remove();
+  document.getElementById('confirmDialogOk').onclick = () => { overlay.remove(); onConfirm(); };
+}
+
+async function adminDeleteUser(username) {
+  showConfirmDialog(`Delete account "${username}" and all of their tests/progress? This can't be undone.`, async () => {
+    await adminDelKey(`user:${username}`);
+    const testKeys = await adminListKeys(`test:${username}:`);
+    const progressKeys = await adminListKeys(`progress:${username}:`);
+    for (const k of [...testKeys, ...progressKeys]) await adminDelKey(k);
+    if (adminSelectedUserFilter === username) adminSelectedUserFilter = null;
+    renderAdminPanel();
+  });
+}
+
+async function adminDeleteTest(testKey, owner, testId) {
+  showConfirmDialog('Delete this test and its progress record?', async () => {
+    await adminDelKey(testKey);
+    await adminDelKey(`progress:${owner}:${testId}`);
+    renderAdminPanel();
+  });
+}
+
+async function adminResetAll() {
+  const dynamicAdmins = await loadDynamicAdmins();
+  const allAdmins = [...new Set([...ADMIN_USERNAMES, ...dynamicAdmins])];
+  const adminList = allAdmins.join('", "');
+  showConfirmDialog(`This deletes every account, test, and progress record for everyone using this app — except the admin account(s) "${adminList}", which are preserved. This can't be undone. Continue?`, async () => {
+    const statusEl = document.getElementById('adminStatus');
+    statusEl.textContent = 'Clearing everything…';
+    try {
+      const allKeys = [...(await adminListKeys('user:')), ...(await adminListKeys('test:')), ...(await adminListKeys('progress:'))];
+      const keysToDelete = allKeys.filter(key => {
+        // Preserve every admin account (built-in or promoted) and their tests/progress
+        for (const admin of allAdmins) {
+          if (key === `user:${admin}`) return false;
+          if (key.startsWith(`test:${admin}:`)) return false;
+          if (key.startsWith(`progress:${admin}:`)) return false;
+        }
+        return true;
+      });
+      for (const key of keysToDelete) await adminDelKey(key);
+      statusEl.textContent = `Cleared ${keysToDelete.length} record(s). Kept: ${adminList}.`;
+      adminSelectedUserFilter = null;
+      renderAdminPanel();
+    } catch (e) {
+      statusEl.textContent = 'Could not clear data: ' + e.message;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+renderAuthGate();
+</script>
+</body>
+</html>
